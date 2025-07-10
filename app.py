@@ -5,15 +5,16 @@ from PIL import Image
 from io import BytesIO
 from docx import Document
 from docx.shared import Mm
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL, WD_ROW_HEIGHT_RULE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from pdf2image import convert_from_bytes
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://timur-kalabin.github.io"])
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
@@ -62,7 +63,8 @@ def create_document_from_images(image_streams):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.autofit = False
         for row in table.rows:
-            row.height = CELL_HEIGHT + TOP_SPACE
+            row.height = Mm(CELL_HEIGHT.mm + TOP_SPACE.mm)
+            row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
             for cell in row.cells:
                 cell.width = CELL_WIDTH
                 cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
@@ -76,8 +78,7 @@ def create_document_from_images(image_streams):
             img_data = process_image(image_streams[i + idx])
             if img_data:
                 para = cell.paragraphs[0]
-                para.alignment = 1
-                para.space_before = TOP_SPACE
+                para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
                 run = para.add_run()
                 run.add_picture(img_data, width=CELL_WIDTH, height=CELL_HEIGHT)
         if i + 4 < len(image_streams):
